@@ -28,6 +28,7 @@
 
 	<name>Word2Mobi</name>
 
+	<!-- Properties -->
 	<properties>
 		<version.jdom>2.0.2</version.jdom>
 		<version.junit>4.11</version.junit>
@@ -39,6 +40,15 @@
         <version-maven-compiler-plugin>3.1</version-maven-compiler-plugin>
 	</properties>
 
+    <!-- Source Control -->
+    <scm>
+        <connection>scm:git:git://github.com/tdiesler/word2mobi.git</connection>
+        <developerConnection>scm:git:git@github.com:tdiesler/word2mobi.git</developerConnection>
+        <url>http://github.com/wildflyext/wildfly-camel</url>
+        <tag>HEAD</tag>
+    </scm>
+    
+    <!-- Dependency Management -->
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
