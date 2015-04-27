@@ -35,17 +35,17 @@ public class CharacterEncodingTest {
     @Test
     public void testCharset() throws Exception {
         
-        File infile = new File("src/test/resources/chartest.xml");
+        File infile = new File("src/test/resources/chartest-with.binary");
         
         InputStream in = new FileInputStream(infile);
         BufferedReader br = new BufferedReader(new InputStreamReader(in, "x-MacRoman"));
         String result = br.readLine();
         br.close();
-        Assert.assertTrue("Contains: " + result, result.contains("Blumen für Alle"));
+        Assert.assertTrue("Contains: " + result, result.contains("Blumen für alle"));
         
         ParserBuilder builder = new ParserBuilder();
         Parser parser = builder.compact().build();
         result = parser.process(infile);
-        Assert.assertTrue("Contains: " + result, result.contains("Blumen f&#xfc;r Alle"));
+        Assert.assertTrue("Contains: " + result, result.contains("Blumen f&#xfc;r alle"));
     }
 }
