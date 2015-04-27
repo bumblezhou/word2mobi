@@ -23,64 +23,65 @@
   -Dlog4j.configuration=file://${workspace_loc:word2mobi-parser}/src/test/resources/config/logging.properties
   -Dword2mobi.configuration=file://${workspace_loc:word2mobi-parser}/src/test/resources/config/word2mobi.properties
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-	<parent>
-		<groupId>org.kdp.word</groupId>
-		<artifactId>word2mobi</artifactId>
-		<version>1.0.1-SNAPSHOT</version>
-	</parent>
+    <parent>
+        <groupId>org.kdp.word</groupId>
+        <artifactId>word2mobi</artifactId>
+        <version>1.0.1-SNAPSHOT</version>
+    </parent>
 
-	<name>Word2Mobi :: Parser</name>
+    <name>Word2Mobi :: Parser</name>
 
-	<artifactId>word2mobi-parser</artifactId>
-	<packaging>jar</packaging>
+    <artifactId>word2mobi-parser</artifactId>
+    <packaging>jar</packaging>
 
     <!-- Properties -->
     <properties>
         <log4j.configuration>file://${basedir}/src/test/resources/config/logging.properties</log4j.configuration>
         <word2mobi.configuration>file://${basedir}/src/test/resources/config/word2mobi.properties</word2mobi.configuration>
     </properties>
-    
+
     <!-- Dependencies -->
-	<dependencies>
-		<dependency>
-			<groupId>org.ccil.cowan.tagsoup</groupId>
-			<artifactId>tagsoup</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.jdom</groupId>
-			<artifactId>jdom</artifactId>
-		</dependency>
+    <dependencies>
+        <dependency>
+            <groupId>org.ccil.cowan.tagsoup</groupId>
+            <artifactId>tagsoup</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jdom</groupId>
+            <artifactId>jdom</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
         </dependency>
-        
-        <!-- Test -->
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<scope>test</scope>
-		</dependency>
-	</dependencies>
 
-	<!-- Build -->
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<configuration>
-					<archive>
-						<manifest>
-							<addClasspath>true</addClasspath>
-							<mainClass>org.kdp.word.Main</mainClass>
-						</manifest>
-					</archive>
-				</configuration>
-			</plugin>
+        <!-- Test -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <!-- Build -->
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <mainClass>org.kdp.word.Main</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -92,6 +93,6 @@
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
-		</plugins>
-	</build>
+        </plugins>
+    </build>
 </project>
