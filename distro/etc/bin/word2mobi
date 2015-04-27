@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# Usage : word2mobi [input file]
+
+DIRNAME=`dirname "$0"`
+HOMEDIR=`cd $DIRNAME/..; pwd`
+
+java -jar \
+	-Dlog4j.configuration=file://$HOMEDIR/config/logging.properties \
+	-Dword2mobi.configuration=file://$HOMEDIR/config/word2mobi.properties \
+	$HOMEDIR/lib/word2mobi-parser-@project.version@.jar "$@"
