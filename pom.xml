@@ -22,7 +22,7 @@
 
 	<groupId>org.kdp.word</groupId>
 	<artifactId>word2mobi</artifactId>
-	<version>1.0.0</version>
+	<version>1.0.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<name>Word2Mobi</name>
@@ -45,7 +45,7 @@
         <connection>scm:git:git://github.com/tdiesler/word2mobi.git</connection>
         <developerConnection>scm:git:git@github.com:tdiesler/word2mobi.git</developerConnection>
         <url>http://github.com/wildflyext/wildfly-camel</url>
-        <tag>1.0.0</tag>
+        <tag>HEAD</tag>
     </scm>
     
     <!-- Dependency Management -->

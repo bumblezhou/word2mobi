@@ -29,7 +29,7 @@
 	<parent>
 		<groupId>org.kdp.word</groupId>
 		<artifactId>word2mobi</artifactId>
-		<version>1.0.0</version>
+		<version>1.0.1-SNAPSHOT</version>
 	</parent>
 
 	<name>Word2Mobi :: Parser</name>
