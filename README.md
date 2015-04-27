@@ -1,4 +1,4 @@
-# word2mobi
+# Word2Mobi
 
 An HTML processor that transforms content exported by MS Word such that it can be processed by [kindlegen](http://www.amazon.com/gp/feature.html?docId=1000765211).
 
