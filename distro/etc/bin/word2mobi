@@ -2,10 +2,22 @@
 
 # Usage : word2mobi [input file]
 
-DIRNAME=`dirname "$0"`
-HOMEDIR=`cd $DIRNAME/..; pwd`
+PRG="$0"
+
+# need this for relative symlinks
+while [ -h "$PRG" ] ; do
+  ls=`ls -ld "$PRG"`
+  link=`expr "$ls" : '.*-> \(.*\)$'`
+  if expr "$link" : '/.*' > /dev/null; then
+    PRG="$link"
+  else
+    PRG="`dirname "$PRG"`/$link"
+  fi
+done
+
+HOMEDIR=`dirname $PRG`/..
 
 java -jar \
-	-Dlog4j.configuration=file://$HOMEDIR/config/logging.properties \
-	-Dword2mobi.configuration=file://$HOMEDIR/config/word2mobi.properties \
-	$HOMEDIR/lib/word2mobi-parser-@project.version@.jar "$@"
+        -Dlog4j.configuration=file://$HOMEDIR/config/logging.properties \
+        -Dword2mobi.configuration=file://$HOMEDIR/config/word2mobi.properties \
+        $HOMEDIR/lib/word2mobi-parser-@project.version@.jar "$@"
