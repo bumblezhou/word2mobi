@@ -20,24 +20,54 @@
 package org.kdp.word;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.kdp.word.utils.IllegalArgumentAssertion;
+import org.kohsuke.args4j.Argument;
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
+import org.kohsuke.args4j.spi.FileOptionHandler;
 
 /**
  *
  */
 public class Main {
-    
+
     public static void main(String[] args) throws Exception {
 
-        IllegalArgumentAssertion.assertTrue(args != null && args.length == 1, "Inputfile required");
+        Options options = new Options();
+        CmdLineParser cmdParser = new CmdLineParser(options);
+        try {
+            cmdParser.parseArgument(args);
+        } catch (CmdLineException e) {
+            System.err.println(e.getMessage());
+            helpScreen(cmdParser);
+            return;
+        }
 
-        File infile = new File(args[0]);
-        IllegalArgumentAssertion.assertTrue(infile.isFile(), "Invalid inputfile: " + infile);
-
-        Parser parser = new ParserBuilder().build();
+        if (options.help) {
+            helpScreen(cmdParser);
+            return;
+        }
         
+        Parser parser = new ParserBuilder().build();
+        File infile = options.arguments.get(0);
         String result = parser.process(infile);
         System.out.println(result);
+    }
+
+    private static void helpScreen(CmdLineParser cmdParser) {
+        System.err.println("java -jar word2mobi.jar [options...] MyInput.html");
+        cmdParser.printUsage(System.err);
+    }
+
+    static class Options {
+
+        @Option(name = "--help", help = true )
+        private boolean help;
+        
+        @Argument( usage = "MyInput.html", required = true, handler = FileOptionHandler.class )
+        private List<File> arguments = new ArrayList<>();
     }
 }

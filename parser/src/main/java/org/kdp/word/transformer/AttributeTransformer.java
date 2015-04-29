@@ -28,7 +28,6 @@ import org.jdom2.Attribute;
 import org.jdom2.Element;
 import org.kdp.word.Parser;
 import org.kdp.word.Transformer;
-import org.kdp.word.utils.IllegalStateAssertion;
 
 /**
  * Transforms element attributes according the word2mobi.properties 
@@ -37,49 +36,53 @@ public class AttributeTransformer implements Transformer {
     
     @Override
     public void transform(Parser parser, Path basedir, Element root) {
-        
-        Set<String> remove = new HashSet<>();
         Set<Replace> replace = new HashSet<>();
         for (String key : parser.getPropertyKeys()) {
             String value = parser.getProperty(key);
-            if (key.startsWith(Parser.PROPERTY_ATTRIBUTE_REMOVE) && Boolean.parseBoolean(value)) {
-                String attid = key.substring(Parser.PROPERTY_ATTRIBUTE_REMOVE.length() + 1);
-                remove.add(attid);
-            }
             if (key.startsWith(Parser.PROPERTY_ATTRIBUTE_REPLACE)) {
                 String attid = key.substring(Parser.PROPERTY_ATTRIBUTE_REPLACE.length() + 1);
-                attid = attid.substring(0, attid.lastIndexOf('.'));
-                String[] items = value.split(",");
-                IllegalStateAssertion.assertEquals(2, items.length, "Invalid attribute replace spec: " + value);
-                String substr = items[0].trim();
-                String newval = items[1].trim();
-                Replace repitem = new Replace(attid, substr, newval);
-                replace.add(repitem);
+                String[] keyItems = attid.split("\\.");
+                if (keyItems.length > 2) {
+                    int firstIndex = attid.indexOf('.');
+                    int secondIndex = attid.indexOf('.', firstIndex + 1);
+                    attid = attid.substring(0, secondIndex);
+                }
+                String[] valueItems = value.split(",");
+                if (valueItems.length == 2) {
+                    replace.add(new Replace(attid, valueItems[0].trim(), valueItems[1].trim()));
+                } else if (valueItems.length == 1) {
+                    replace.add(new Replace(attid, null, valueItems[0].trim()));
+                } else {
+                    throw new IllegalStateException("Invalid attribute replace: " + key + "=" + value);
+                }
             }
         }
         for (Element el : root.getChildren()) {
-            transformInternal(parser, el, remove, replace);
+            transformInternal(parser, el, replace);
         }
     }
 
-    private void transformInternal(Parser parser, Element el, Set<String> remove, Set<Replace> replace) {
+    private void transformInternal(Parser parser, Element el, Set<Replace> replace) {
         String elname = el.getName();
         for (Attribute att : new ArrayList<Attribute>(el.getAttributes())) {
             String attname = att.getName();
             String attvalue = att.getValue();
             String attid = elname + "." + attname;
-            if (remove.contains(attid)) {
-                el.removeAttribute(att);
-            } else {
-                for (Replace rep : replace) {
-                    if (attid.equals(rep.attid) && attvalue.contains(rep.substr)) {
-                        att.setValue(rep.newval);
+            for (Replace rep : replace) {
+                if (attid.equals(rep.attid)) {
+                    if (rep.substr == null || attvalue.contains(rep.substr)) {
+                        if (rep.newval == null || rep.newval.length() == 0) {
+                            el.getAttributes().remove(att);
+                        } else {
+                            att.setValue(rep.newval);
+                        }
+                        break;
                     }
                 }
             }
         }
         for (Element ch : el.getChildren()) {
-            transformInternal(parser, ch, remove, replace);
+            transformInternal(parser, ch, replace);
         }
     }
     

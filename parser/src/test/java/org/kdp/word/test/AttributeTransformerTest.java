@@ -36,7 +36,7 @@ public class AttributeTransformerTest {
         
         File infile = new File("src/test/resources/WebPage03.html");
         String result = parser.process(infile);
-        //System.out.println(result);
+        System.out.println(result);
         Assert.assertTrue("Contains Arabia600AD-550w.jpg", result.contains("<img src=\"images/Arabia600AD-550w.jpg\" />"));
     }
 }

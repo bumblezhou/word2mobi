@@ -55,9 +55,6 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-/**
- *
- */
 public final class Parser {
 
     private static Logger log = LoggerFactory.getLogger(Parser.class);
@@ -65,7 +62,6 @@ public final class Parser {
     public static final String SYSTEM_PROPERTY_CONFIGURATION = "word2mobi.configuration";
     public static final String CONFIGURATION_PROPERTIES = "word2mobi.properties";
     
-    public static final String PROPERTY_ATTRIBUTE_REMOVE = "attribute.remove";
     public static final String PROPERTY_ATTRIBUTE_REPLACE = "attribute.replace";
     public static final String PROPERTY_ESCAPED_CHARS = "escaped.chars";
     public static final String PROPERTY_INPUT_CHARSET = "input.charset";
