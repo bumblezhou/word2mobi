@@ -19,7 +19,6 @@
  */
 package org.kdp.word.transformer;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
@@ -28,14 +27,20 @@ import org.jdom2.Attribute;
 import org.jdom2.Element;
 import org.kdp.word.Parser;
 import org.kdp.word.Transformer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Transforms element attributes according the word2mobi.properties 
  */
 public class AttributeTransformer implements Transformer {
     
+    private static Logger log = LoggerFactory.getLogger(AttributeTransformer.class);
+    
     @Override
-    public void transform(Parser parser, Path basedir, Element root) {
+    public void transform(Context context) {
+        Parser parser = context.getParser();
+        Element root = context.getSourceRoot();
         Set<Replace> replace = new HashSet<>();
         for (String key : parser.getPropertyKeys()) {
             String value = parser.getProperty(key);
@@ -72,8 +77,10 @@ public class AttributeTransformer implements Transformer {
                 if (attid.equals(rep.attid)) {
                     if (rep.substr == null || attvalue.contains(rep.substr)) {
                         if (rep.newval == null || rep.newval.length() == 0) {
+                            log.debug("Remote attribute: {}", att);
                             el.getAttributes().remove(att);
                         } else {
+                            log.debug("Replace attribute: {}", att);
                             att.setValue(rep.newval);
                         }
                         break;

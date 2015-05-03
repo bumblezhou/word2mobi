@@ -31,7 +31,8 @@ public class BasicTagSoupTest {
     @Test
     public void testBasicCleanup() throws Exception {
         File infile = new File("src/test/resources/WebPage01.html");
-        Parser parser = new ParserBuilder().compact().build();
+        ParserBuilder builder = ParserBuilderFactory.newInstance();
+        Parser parser = builder.compact().build();
         String result = parser.process(infile);
         //System.out.println(result);
         Assert.assertEquals("<html><body><a shape=\"rect\" href=\"foo\">aaa</a></body></html>", result.trim());

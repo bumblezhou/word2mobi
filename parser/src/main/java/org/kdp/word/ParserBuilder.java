@@ -22,6 +22,7 @@ package org.kdp.word;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.Properties;
 
 import org.slf4j.Logger;
@@ -35,10 +36,23 @@ public class ParserBuilder {
     
     private static Logger log = LoggerFactory.getLogger(Parser.class);
     
-    private Properties properties = new Properties();
-    private Parser parser = new Parser();
+    private final Properties properties = new Properties();
+    private final Options options;
+    private final Parser parser;
     
+    public ParserBuilder(Options options) {
+        this.parser = new Parser(options);
+        this.options = options;
+        initProperties();
+    }
+
     public ParserBuilder() {
+        this.options = new Options();
+        this.parser = new Parser(options);
+        initProperties();
+    }
+
+    private void initProperties() {
         try {
             String configLocation = System.getProperty(Parser.SYSTEM_PROPERTY_CONFIGURATION);
             if (configLocation != null) {
@@ -67,6 +81,26 @@ public class ParserBuilder {
 
     public ParserBuilder pretty() {
         properties.setProperty(Parser.PROPERTY_OUTPUT_FORMAT, Parser.OUTPUT_FORMAT_PRETTY);
+        return this;
+    }
+    
+    public ParserBuilder bookdir(String bookdir) {
+        options.setBookDir(Paths.get(bookdir));
+        return this;
+    }
+    
+    public ParserBuilder output(String output) {
+        options.setOutput(Paths.get(output));
+        return this;
+    }
+    
+    public ParserBuilder opfTarget(String target) {
+        options.setOpfTarget(Paths.get(target));
+        return this;
+    }
+    
+    public ParserBuilder opfTemplate(String template) {
+        options.setOpfTemplate(Paths.get(template));
         return this;
     }
     

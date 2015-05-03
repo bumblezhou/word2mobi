@@ -31,44 +31,46 @@ import org.kdp.word.Parser;
 import org.kdp.word.ParserBuilder;
 
 /**
- * Tests the {@see TOCTransformer}
+ * Tests the {@see OPFTransformer}
  */
-public class TOCTransformerTest {
+public class OPFTransformerTest {
     
     @Test
-    public void testTOC() throws Exception {
+    public void testGeneratedOPF() throws Exception {
         
         ParserBuilder builder = ParserBuilderFactory.newInstance();
-        Parser parser = builder.pretty().build();
+        Parser parser = builder.output("test.xhtml").opfTarget("test-book.opf").pretty().build();
         
-        File infile = new File("src/test/resources/WebPage02.html");
-        String result = parser.process(infile);
-        //System.out.println(result);
-        Assert.assertFalse("No WordSection1", result.contains("<div class=\"WordSection1\">"));
-        Assert.assertTrue("Contains WordSection2", result.contains("<div class=\"WordSection2\">"));
+        File infile = new File("src/test/resources/WebPage07.html");
+        parser.process(infile);
         
-        File tocfile = new File("target/book/WordSection1.xhtml");
-        Assert.assertTrue("Exists WordSection1.xhtml", tocfile.exists());
-        
+        File opffile = new File("target/book/test-book.opf");
+        Assert.assertTrue("File exists: " + opffile, opffile.isFile());
+
         List<String> lines = new ArrayList<>();
-        BufferedReader br = new BufferedReader(new FileReader(tocfile));
+        BufferedReader br = new BufferedReader(new FileReader(opffile));
         String line = br.readLine();
         while (line != null) {
+            //System.out.println(line);
             lines.add(line.trim());
             line = br.readLine();
         }
         br.close();
         
-        Assert.assertTrue("Contains #_Toc2", contains(lines, "<a href=\"WebPage02.xhtml#_Toc2\">Chapter 2</a>"));
-        Assert.assertTrue("Contains #_Toc3", contains(lines, "<a href=\"WebPage02.xhtml#_Toc3\">Chapter 3</a>"));
-        Assert.assertTrue("Contains #_Toc4", contains(lines, "<a href=\"WebPage02.xhtml#_Toc4\">Chapter 4</a>"));
+        Assert.assertTrue(contains(lines, "<dc:title>Blumen für Alle</dc:title>"));
+        Assert.assertTrue(contains(lines, "<dc:creator xmlns:epub=\"http://www.idpf.org/2007/opf\" epub:role=\"aut\">Peter Post</dc:creator>"));
+        Assert.assertTrue(contains(lines, "<dc:language>DE</dc:language>"));
+
+        Assert.assertTrue(contains(lines, "id=\"CoverImage\" href=\"images/book-cover.jpg\""));
+        Assert.assertTrue(contains(lines, "id=\"Content\" href=\"test.xhtml\""));
     }
 
-    private boolean contains(List<String> lines, String substring) {
+    private boolean contains(List<String> lines, String substr) {
         for (String line : lines) {
-            if (line.contains(substring)) {
+            if (line.contains(substr)) {
                 return true;
             }
+                
         }
         return false;
     }

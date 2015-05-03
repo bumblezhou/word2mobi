@@ -22,6 +22,7 @@ package org.kdp.word;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -30,9 +31,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.Stack;
@@ -44,9 +46,8 @@ import org.jdom2.DefaultJDOMFactory;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.JDOMFactory;
-import org.jdom2.output.EscapeStrategy;
-import org.jdom2.output.Format;
-import org.jdom2.output.XMLOutputter;
+import org.kdp.word.Transformer.Context;
+import org.kdp.word.utils.IOUtils;
 import org.kdp.word.utils.IllegalArgumentAssertion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,6 +66,11 @@ public final class Parser {
     public static final String PROPERTY_ATTRIBUTE_REPLACE = "attribute.replace";
     public static final String PROPERTY_ESCAPED_CHARS = "escaped.chars";
     public static final String PROPERTY_INPUT_CHARSET = "input.charset";
+    public static final String PROPERTY_OPF_MANIFEST_COVER_IMAGE = "opf.manifest.cover.image";
+    public static final String PROPERTY_OPF_MANIFEST_COVER_IMAGE_TYPE = "opf.manifest.cover.image.type";
+    public static final String PROPERTY_OPF_METADATA_AUTHOR = "opf.metadata.author";
+    public static final String PROPERTY_OPF_METADATA_LANGUAGE = "opf.metadata.language";
+    public static final String PROPERTY_OPF_METADATA_TITLE = "opf.metadata.title";
     public static final String PROPERTY_OUTPUT_ENCODING = "output.encoding";
     public static final String PROPERTY_OUTPUT_FORMAT = "output.format";
     public static final String PROPERTY_STYLE_REPLACE = "style.replace";
@@ -73,11 +79,12 @@ public final class Parser {
     public static final String OUTPUT_FORMAT_COMPACT = "compact";
     public static final String OUTPUT_FORMAT_PRETTY = "pretty";
 
-    private List<Transformer> transformers = new ArrayList<>();
-    private Properties properties = new Properties();
-
-    // hide ctor
-    Parser() {
+    private final List<Transformer> transformers = new ArrayList<>();
+    private final Properties properties = new Properties();
+    private final Options options;
+    
+    Parser(Options options) {
+        this.options = options;
     }
 
     void init(Properties properties) {
@@ -125,7 +132,8 @@ public final class Parser {
         IllegalArgumentAssertion.assertNotNull(infile, "infile");
         log.info("Process: {}", infile);
         
-        Path basedir = Paths.get(infile.toURI()).getParent();
+        final Path source = Paths.get(infile.toURI());
+        final Path basedir = source.getParent();
         initDefaults(basedir);
 
         log.info("Using properties:");
@@ -134,24 +142,98 @@ public final class Parser {
         }
         
         // Parse input file to Document
-        Document doc = parse(infile);
+        final JDOMFactory factory = new DefaultJDOMFactory();
+        final Document doc = parseHTML(factory, infile);
 
+        Context context = new Context() {
+            
+            private Map<String, Object> attributes = new HashMap<>();
+            
+            @Override
+            public JDOMFactory getJDOMFactory() {
+                return factory;
+            }
+
+            @Override
+            public Parser getParser() {
+                return Parser.this;
+            }
+
+            @Override
+            public Options getOptions() {
+                return options;
+            }
+
+            @Override
+            public Path getBasedir() {
+                return basedir;
+            }
+
+            @Override
+            public Path getSource() {
+                return source;
+            }
+
+            @Override
+            public Path getTarget() {
+                Path outpath = options.getOutput();
+                if (outpath == null) {
+                    String fname = source.getFileName().toString();
+                    fname = fname.substring(0, fname.lastIndexOf('.')) + ".xhtml";
+                    outpath = Paths.get(fname);
+                }
+                return outpath;
+            }
+
+            @Override
+            public Element getSourceRoot() {
+                return doc.getRootElement();
+            }
+
+            @Override
+            @SuppressWarnings("unchecked")
+            public <T> T getAttribute(Class<T> type) {
+                return (T) getAttributes().get(type.getName());
+            }
+
+            @Override
+            public <T> void putAttribute(Class<T> type, T value) {
+                attributes.put(type.getName(), value);
+            }
+
+            @Override
+            public Map<String, Object> getAttributes() {
+                return attributes;
+            }
+        };
+        
         // Transform the Document
         for (Transformer tr : transformers) {
             log.debug("Transforming with: {}", tr);
-            tr.transform(this, basedir, doc.getRootElement());
+            tr.transform(context);
         }
 
-        // Write the document to stdout
-        return writeDocument(doc);
+        // Get the result
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        IOUtils.writeDocument(context, doc, baos);
+        String result = new String(baos.toByteArray());
+        
+        // Write output file 
+        File outfile = options.getBookDir().resolve(context.getTarget()).toFile();
+        outfile.getParentFile().mkdirs();
+        log.info("Writing output to: {}", outfile);
+        FileOutputStream fos = new FileOutputStream(outfile);
+        IOUtils.writeDocument(context, doc, fos);
+        fos.close();
+        
+        return result;
     }
 
     /**
      * Parse the input file and return a well formed document
      */
-    private Document parse(File infile) throws SAXException, IOException {
+    private Document parseHTML(final JDOMFactory factory, final File infile) throws SAXException, IOException {
 
-        final JDOMFactory factory = new DefaultJDOMFactory();
         final AtomicReference<Document> docref = new AtomicReference<>();
 
         String charset = getProperty(PROPERTY_INPUT_CHARSET);
@@ -214,48 +296,6 @@ public final class Parser {
                 throw new IllegalStateException("Cannot parse config", ex);
             }
             init(properties);
-        }
-    }
-    
-    private String writeDocument(Document doc) throws IOException {
-        String outputEncoding = properties.getProperty(PROPERTY_OUTPUT_ENCODING);
-        outputEncoding = outputEncoding != null ? outputEncoding : "UTF-8";
-        String outputFormat = properties.getProperty(PROPERTY_OUTPUT_FORMAT);
-        boolean pretty = OUTPUT_FORMAT_PRETTY.equals(outputFormat);
-
-        XMLOutputter xo = new XMLOutputter();
-        Format format = pretty ? Format.getPrettyFormat() : Format.getCompactFormat();
-        format.setEncoding(outputEncoding);
-        format.setEscapeStrategy(new OutputEscapeStrategy(format.getEscapeStrategy()));
-        xo.setFormat(format.setOmitDeclaration(true));
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        xo.output(doc, baos);
-
-        return new String(baos.toByteArray());
-    }
-
-    class OutputEscapeStrategy implements EscapeStrategy {
-        private final EscapeStrategy encodingStrateg;
-        private final Set<Integer> escaped = new HashSet<>();
-        
-        OutputEscapeStrategy(EscapeStrategy encodingStrategy) {
-            this.encodingStrateg = encodingStrategy;
-            String chars = getProperty(PROPERTY_ESCAPED_CHARS);
-            if (chars != null) {
-                for (String hexcode : chars.split(",")) {
-                    escaped.add(Integer.decode(hexcode));
-                }
-            }
-        }
-
-        @Override
-        public boolean shouldEscape(char ch) {
-            Integer hexcode = new Integer(ch);
-            if (escaped.contains(hexcode)) {
-                return true;
-            }
-            return encodingStrateg.shouldEscape(ch);
         }
     }
 }

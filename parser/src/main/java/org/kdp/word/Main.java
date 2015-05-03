@@ -20,18 +20,10 @@
 package org.kdp.word;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
-import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
-import org.kohsuke.args4j.Option;
-import org.kohsuke.args4j.spi.FileOptionHandler;
 
-/**
- *
- */
 public class Main {
 
     public static void main(String[] args) throws Exception {
@@ -41,33 +33,17 @@ public class Main {
         try {
             cmdParser.parseArgument(args);
         } catch (CmdLineException e) {
-            System.err.println(e.getMessage());
-            helpScreen(cmdParser);
+            options.helpScreen(cmdParser);
             return;
         }
 
-        if (options.help) {
-            helpScreen(cmdParser);
+        if (options.help || options.arguments.isEmpty()) {
+            options.helpScreen(cmdParser);
             return;
         }
-        
-        Parser parser = new ParserBuilder().build();
+
+        Parser parser = new ParserBuilder(options).build();
         File infile = options.arguments.get(0);
-        String result = parser.process(infile);
-        System.out.println(result);
-    }
-
-    private static void helpScreen(CmdLineParser cmdParser) {
-        System.err.println("java -jar word2mobi.jar [options...] MyInput.html");
-        cmdParser.printUsage(System.err);
-    }
-
-    static class Options {
-
-        @Option(name = "--help", help = true )
-        private boolean help;
-        
-        @Argument( usage = "MyInput.html", required = true, handler = FileOptionHandler.class )
-        private List<File> arguments = new ArrayList<>();
+        parser.process(infile);
     }
 }

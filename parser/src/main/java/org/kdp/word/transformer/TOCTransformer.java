@@ -20,32 +20,63 @@
 package org.kdp.word.transformer;
 
 import java.nio.file.Path;
+import java.util.Iterator;
+import java.util.List;
 
 import org.jdom2.Attribute;
-import org.jdom2.DefaultJDOMFactory;
 import org.jdom2.Element;
 import org.jdom2.JDOMFactory;
-import org.kdp.word.Parser;
 import org.kdp.word.Transformer;
+import org.kdp.word.utils.IOUtils;
+import org.kdp.word.utils.JDOMUtils;
 
 /**
  * Add an anchor for each 'MsoToc1' style element 
  */
 public class TOCTransformer implements Transformer {
     
-    private final JDOMFactory factory = new DefaultJDOMFactory();
-    
     @Override
-    public void transform(Parser parser, Path basedir, Element root) {
+    public void transform(Context context) {
+        JDOMFactory factory = context.getJDOMFactory();
+        
+        Element root = context.getSourceRoot();
         for (Element el : root.getChildren()) {
-            transformInternal(root, el);
+            transformInternal(context, el);
+        }
+        
+        Element first = JDOMUtils.findElement(root, "p", "class", "MsoToc1");
+        if (first != null) {
+            Element parent = first.getParentElement();
+            List<Element> children = parent.getChildren();
+            
+            // Add the nav element
+            Element nav = factory.element("nav");
+            nav.getAttributes().add(factory.attribute("type", "toc", OPFTransformer.NS_OPF));
+            int index = children.indexOf(first);
+            children.add(index, nav);
+            
+            // Add the ol element
+            Element ol = factory.element("ol");
+            nav.getChildren().add(ol);
+            
+            Iterator<Element> itel = children.iterator();
+            while (itel.hasNext()) {
+                Element el = itel.next();
+                if (JDOMUtils.isElement(el, "p", "class", "MsoToc1")) {
+                    Element li = factory.element("li");
+                    li.getAttributes().add(factory.attribute("class", "MsoToc1"));
+                    li.addContent(el.cloneContent());
+                    ol.getChildren().add(li);
+                    itel.remove();
+                }
+            }
         }
     }
 
-    private void transformInternal(Element root, Element el) {
-        Attribute att = el.getAttribute("class");
-        String clname = att != null ? att.getValue() : null; 
-        if ("p".equals(el.getName()) && "MsoToc1".equals(clname)) {
+    private void transformInternal(Context context, Element el) {
+        JDOMFactory factory = context.getJDOMFactory();
+        Element root = context.getSourceRoot();
+        if (JDOMUtils.isElement(el, "p", "class", "MsoToc1")) {
             Element tocel = getFirstTextElement(el);
             String tocname = tocel.getText();
             int dotidx = tocname.indexOf("...");
@@ -55,7 +86,8 @@ public class TOCTransformer implements Transformer {
             String aname = findAnchorName(root, tocname);
             if (aname != null) {
                 Element anchor = factory.element("a");
-                anchor.getAttributes().add(factory.attribute("href", "#" + aname));
+                Path targetPath = IOUtils.bookRelative(context, context.getTarget());
+                anchor.getAttributes().add(factory.attribute("href", targetPath + "#" + aname));
                 anchor.setText(tocname);
                 el.getChildren().clear();
                 el.setText(null);
@@ -63,7 +95,7 @@ public class TOCTransformer implements Transformer {
             }
         } else {
             for (Element ch : el.getChildren()) {
-                transformInternal(root, ch);
+                transformInternal(context, ch);
             }
         }
     }

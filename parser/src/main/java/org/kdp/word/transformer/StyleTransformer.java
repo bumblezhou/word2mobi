@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,6 +37,7 @@ import org.kdp.word.Parser;
 import org.kdp.word.Transformer;
 import org.kdp.word.utils.IllegalArgumentAssertion;
 import org.kdp.word.utils.IllegalStateAssertion;
+import org.kdp.word.utils.JDOMUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +49,9 @@ public class StyleTransformer implements Transformer {
     private static Logger log = LoggerFactory.getLogger(StyleTransformer.class);
     
     @Override
-    public void transform(Parser parser, Path basedir, Element root) {
+    public void transform(Context context) {
+        Parser parser = context.getParser();
+        Element root = context.getSourceRoot();
         Map<String, Style> replace = new HashMap<>();
         for (String key : parser.getPropertyKeys()) {
             if (key.startsWith(Parser.PROPERTY_STYLE_REPLACE)) {
@@ -61,26 +63,17 @@ public class StyleTransformer implements Transformer {
             }
         }
         replace = Collections.unmodifiableMap(replace);
-        for (Element el : root.getChildren()) {
-            transformInternal(el, replace);
+        Element style = JDOMUtils.findElement(root, "style");
+        if (style != null) {
+            transformStyles(style, replace);
         }
     }
 
-    private void transformInternal(Element el, Map<String, Style> replace) {
-        if ("style".equals(el.getName())) {
-            String content = transformStyles(el.getTextTrim(), replace);
-            el.setText(content);
-        } else {
-            for (Element ch : el.getChildren()) {
-                transformInternal(ch, replace);
-            }
-        }
-    }
-
-    private String transformStyles(String content, Map<String, Style> replace) {
+    private void transformStyles(Element styleElement, Map<String, Style> replace) {
         List<Style> styles = new ArrayList<>();
         
         // Parse the list of syles
+        String content = styleElement.getTextTrim();
         BufferedReader br = new BufferedReader(new StringReader(content));
         try {
             String line = br.readLine();
@@ -114,7 +107,8 @@ public class StyleTransformer implements Transformer {
             }
             pw.println("}");
         }
-        return sw.toString();
+        
+        styleElement.setText(sw.toString());
     }
 
     private Style parseStyle(BufferedReader br, String firstLine) throws IOException {

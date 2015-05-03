@@ -26,12 +26,15 @@ import org.junit.Test;
 import org.kdp.word.Parser;
 import org.kdp.word.ParserBuilder;
 
+/**
+ * Tests the {@see AttributeTransformer}
+ */
 public class AttributeTransformerTest {
     
     @Test
     public void testAttributeRemoveReplace() throws Exception {
         
-        ParserBuilder builder = new ParserBuilder();
+        ParserBuilder builder = ParserBuilderFactory.newInstance();
         Parser parser = builder.compact().build();
         
         File infile = new File("src/test/resources/WebPage03.html");

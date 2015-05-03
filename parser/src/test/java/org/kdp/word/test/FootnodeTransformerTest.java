@@ -26,7 +26,10 @@ import org.junit.Test;
 import org.kdp.word.Parser;
 import org.kdp.word.ParserBuilder;
 
-public class ListParagraphTransformerTest {
+/**
+ * Tests the {@see FootnodeTransformer}
+ */
+public class FootnodeTransformerTest {
     
     @Test
     public void testTOC() throws Exception {
@@ -34,14 +37,10 @@ public class ListParagraphTransformerTest {
         ParserBuilder builder = ParserBuilderFactory.newInstance();
         Parser parser = builder.pretty().build();
         
-        File infile = new File("src/test/resources/WebPage06.html");
+        File infile = new File("src/test/resources/WebPage08.html");
         String result = parser.process(infile);
         //System.out.println(result);
         
-        Assert.assertTrue("Contains Line item 1", result.contains("<li class=\"MsoListParagraph\">Line item 1</li>"));
-        Assert.assertTrue("Contains Line item 2", result.contains("<b>item</b>"));
-        Assert.assertTrue("Contains Line item 3", result.contains("<li class=\"MsoListParagraph\">Line item 3</li>"));
-        Assert.assertTrue("Contains Line item 4", result.contains("<li class=\"MsoListParagraph\">Line item 4</li>"));
+        Assert.assertTrue("Contains Line item 1", result.contains("<a shape=\"rect\" href=\"#_ftn1\" name=\"_ftnref1\" title=\"\">[1]</a>"));
     }
-    
 }

@@ -26,12 +26,15 @@ import org.junit.Test;
 import org.kdp.word.Parser;
 import org.kdp.word.ParserBuilder;
 
+/**
+ * Tests the {@see StyleTransformer}
+ */
 public class StyleTransformerTest {
     
     @Test
     public void testListTextAlign() throws Exception {
         
-        ParserBuilder builder = new ParserBuilder();
+        ParserBuilder builder = ParserBuilderFactory.newInstance();
         Parser parser = builder.pretty().build();
         
         File infile = new File("src/test/resources/WebPage05.html");

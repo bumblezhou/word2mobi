@@ -31,7 +31,7 @@ public class MetadataTransformerTest {
     @Test
     public void testMetaGenerator() throws Exception {
         
-        ParserBuilder builder = new ParserBuilder();
+        ParserBuilder builder = ParserBuilderFactory.newInstance();
         Parser parser = builder.compact().build();
         
         File infile = new File("src/test/resources/WebPage04.html");
@@ -43,7 +43,7 @@ public class MetadataTransformerTest {
     @Test
     public void testMetaContentType() throws Exception {
         
-        ParserBuilder builder = new ParserBuilder();
+        ParserBuilder builder = ParserBuilderFactory.newInstance();
         Parser parser = builder.compact().build();
         
         File infile = new File("src/test/resources/WebPage04.html");

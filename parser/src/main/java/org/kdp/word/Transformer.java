@@ -20,11 +20,65 @@
 package org.kdp.word;
 
 import java.nio.file.Path;
+import java.util.Map;
 
 import org.jdom2.Element;
+import org.jdom2.JDOMFactory;
 
 public interface Transformer {
 
-    void transform(Parser parser, Path basedir, Element element);
-
+    void transform(Context context);
+    
+    interface Context {
+        
+        /**
+         * Get the JDOMFactory
+         */
+        JDOMFactory getJDOMFactory();
+        
+        /** 
+         * Get the parser instance
+         */
+        Parser getParser();
+        
+        /** 
+         * Get the parser options
+         */
+        Options getOptions();
+        
+        /**
+         * Get the input base dir
+         */
+        Path getBasedir();
+        
+        /**
+         * Get the path to the source document
+         */
+        Path getSource();
+        
+        /**
+         * Get the path to the target document
+         */
+        Path getTarget();
+        
+        /**
+         * Get the source root element
+         */
+        Element getSourceRoot();
+        
+        /**
+         * Get a context attribute
+         */
+        <T> T getAttribute(Class<T> type);
+        
+        /**
+         * Put a context attribute
+         */
+        <T> void putAttribute(Class<T> type, T value);
+        
+        /**
+         * A map of arbitrary context attributes
+         */
+        Map<String, Object> getAttributes();
+    }
 }

@@ -17,26 +17,15 @@
  * limitations under the License.
  * #L%
  */
-package org.kdp.word.transformer;
+package org.kdp.word.test;
 
-import org.jdom2.Attribute;
-import org.jdom2.Element;
-import org.kdp.word.Transformer;
-import org.kdp.word.utils.JDOMUtils;
+import org.kdp.word.ParserBuilder;
 
-/**
- * Transforms the Generator meta element  
- */
-public class MetadataTransformer implements Transformer {
+public class ParserBuilderFactory {
     
-    @Override
-    public void transform(Context context) {
-        Element root = context.getSourceRoot();
-        Element el = JDOMUtils.findElement(root, "meta", "name", "Generator");
-        if (el != null) {
-            Attribute att = el.getAttribute("content");
-            String attval = att.getValue();
-            att.setValue(attval + " - word2mobi");
-        }
+    public static ParserBuilder newInstance() {
+        ParserBuilder builder = new ParserBuilder();
+        builder.bookdir("target/book");
+        return builder;
     }
 }

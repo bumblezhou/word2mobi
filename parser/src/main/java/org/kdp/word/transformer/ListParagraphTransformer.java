@@ -19,70 +19,66 @@
  */
 package org.kdp.word.transformer;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.jdom2.Attribute;
 import org.jdom2.Content;
 import org.jdom2.Content.CType;
-import org.jdom2.DefaultJDOMFactory;
 import org.jdom2.Element;
 import org.jdom2.JDOMFactory;
 import org.jdom2.Text;
-import org.kdp.word.Parser;
 import org.kdp.word.Transformer;
+import org.kdp.word.utils.JDOMUtils;
 
 /**
  * Transforms an MsoListParagraph in an unordered list   
  */
 public class ListParagraphTransformer implements Transformer {
     
-    private final JDOMFactory factory = new DefaultJDOMFactory();
-    
     @Override
-    public void transform(Parser parser, Path basedir, Element root) {
-        
+    public void transform(Context context) {
+        Element root = context.getSourceRoot();
         for (Element el : root.getChildren()) {
-            transformInternal(parser, el);
+            transformInternal(context, el);
         }
     }
 
-    private void transformInternal(Parser parser, Element el) {
+    private void transformInternal(Context context, Element el) {
         if (hasListItems(el)) {
-            processListItems(el);
+            processListItems(context, el);
         } else {
             for (Element ch : el.getChildren()) {
-                transformInternal(parser, ch);
+                transformInternal(context, ch);
             }
         }
     }
 
-    private void processListItems(Element parent) {
+    private void processListItems(Context context, Element parent) {
         int firstItemIndex = -1;
         List<Element> listItems = new ArrayList<>();
         Iterator<Element> itch = parent.getChildren().iterator();
         while (itch.hasNext()) {
             Element ch = itch.next();
-            if (isListItem(ch)) {
+            if (JDOMUtils.isElement(ch, "p", "class", "MsoListParagraph")) {
                 if (listItems.isEmpty()) {
                     firstItemIndex = parent.getChildren().indexOf(ch);     
                 }
                 listItems.add(ch);
                 itch.remove();
             } else if (!listItems.isEmpty()) {
-                processListItemBatch(parent, listItems, firstItemIndex);
+                processListItemBatch(context, parent, listItems, firstItemIndex);
                 itch = parent.getChildren().iterator();
                 listItems = new ArrayList<>();
             }
         }
         if (!listItems.isEmpty()) {
-            processListItemBatch(parent, listItems, firstItemIndex);
+            processListItemBatch(context, parent, listItems, firstItemIndex);
         }
     }
 
-    private void processListItemBatch(Element parent, List<Element> listItems, int firstItemIndex) {
+    private void processListItemBatch(Context context, Element parent, List<Element> listItems, int firstItemIndex) {
+        JDOMFactory factory = context.getJDOMFactory();
         Element ul = factory.element("ul");
         for (Element liItem : listItems) {
             boolean ignoreFirstElement = true;
@@ -115,16 +111,10 @@ public class ListParagraphTransformer implements Transformer {
 
     private boolean hasListItems(Element el) {
         for (Element ch : el.getChildren()) {
-            if (isListItem(ch)) {
+            if (JDOMUtils.isElement(ch, "p", "class", "MsoListParagraph")) {
                 return true;
             }
         }
         return false;
-    }
-    
-    private boolean isListItem(Element el) {
-        Attribute clatt = el.getAttribute("class");
-        String style = clatt != null ? clatt.getValue() : null;
-        return "p".equals(el.getName()) && "MsoListParagraph".equals(style);
     }
 }

@@ -43,7 +43,7 @@ public class CharacterEncodingTest {
         br.close();
         Assert.assertTrue("Contains: " + result, result.contains("Blumen für alle"));
         
-        ParserBuilder builder = new ParserBuilder();
+        ParserBuilder builder = ParserBuilderFactory.newInstance();
         Parser parser = builder.compact().build();
         result = parser.process(infile);
         Assert.assertTrue("Contains: " + result, result.contains("Blumen f&#xfc;r alle"));
