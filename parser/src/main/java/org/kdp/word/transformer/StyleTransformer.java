@@ -20,153 +20,229 @@
 package org.kdp.word.transformer;
 
 import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.StringReader;
 import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
+import java.util.Set;
+import java.util.regex.Pattern;
 
+import org.jdom2.Attribute;
 import org.jdom2.Element;
+import org.jdom2.JDOMFactory;
+import org.kdp.word.Options;
 import org.kdp.word.Parser;
 import org.kdp.word.Transformer;
-import org.kdp.word.utils.IllegalArgumentAssertion;
 import org.kdp.word.utils.IllegalStateAssertion;
 import org.kdp.word.utils.JDOMUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Transform style definitions
  */
 public class StyleTransformer implements Transformer {
 
-    private static Logger log = LoggerFactory.getLogger(StyleTransformer.class);
+    private List<Replacement> replacements;
+    private Set<String> whitelist = new HashSet<>();
     
     @Override
     public void transform(Context context) {
         Parser parser = context.getParser();
-        Element root = context.getSourceRoot();
-        Map<String, Style> replace = new HashMap<>();
-        for (String key : parser.getPropertyKeys()) {
-            if (key.startsWith(Parser.PROPERTY_STYLE_REPLACE)) {
-                String name = key.substring(Parser.PROPERTY_STYLE_REPLACE.length() + 1);
-                Style style = new Style (name);
-                String values = parser.getProperty(key);
-                addStyleAttributes(style, values);
-                replace.put(name, style);
+        Options options = context.getOptions();
+        Path cssPath = options.getExternalCSS();
+        if (cssPath == null)
+            return;
+        
+        // Parse the external styles
+        replacements = parseStyleReplacements(context);
+        parseExternalStyles(context, cssPath);
+        
+        String wltoks = parser.getProperty(Parser.PROPERTY_STYLE_REPLACE_WHITELIST);
+        if (wltoks != null) {
+            for (String tok : wltoks.split(",")) {
+                whitelist.add(tok.trim());
             }
         }
-        replace = Collections.unmodifiableMap(replace);
-        Element style = JDOMUtils.findElement(root, "style");
-        if (style != null) {
-            transformStyles(style, replace);
+        
+        // Remove existing style definitions
+        Element root = context.getSourceRoot();
+        Element elStyle = JDOMUtils.findElement(root, "style");
+        if (elStyle != null) {
+            elStyle.getParentElement().removeContent(elStyle);
+        }
+        
+        // Copy the CSS to the book dir
+        Path cssName = cssPath.getFileName();
+        try {
+            Path bookDir = options.getBookDir();
+            Path cssBook = bookDir.resolve(cssName);
+            bookDir.toFile().mkdirs();
+            Files.copy(cssPath, cssBook, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException ex) {
+            throw new IllegalStateException(ex);
+        }
+        
+        // Add reference to external styles
+        Element elHead = JDOMUtils.findElement(root, "head");
+        if (elHead != null) {
+            JDOMFactory factory = context.getJDOMFactory();
+            Element elLink = factory.element("link");
+            elLink.setAttribute("rel", "stylesheet");
+            elLink.setAttribute("type", "text/css");
+            elLink.setAttribute("href", cssName.toString());
+            elHead.addContent(elLink);
+            
+            transformStyles(context, root);
         }
     }
 
-    private void transformStyles(Element styleElement, Map<String, Style> replace) {
-        List<Style> styles = new ArrayList<>();
-        
-        // Parse the list of syles
-        String content = styleElement.getTextTrim();
-        BufferedReader br = new BufferedReader(new StringReader(content));
+    private List<Replacement> parseStyleReplacements(Context context) {
+        Parser parser = context.getParser();
+        List<Replacement> result = new ArrayList<>();
+        for (String key : parser.getPropertyKeys()) {
+            if (key.startsWith(Parser.PROPERTY_STYLE_REPLACE)) {
+                String attname = key.substring(Parser.PROPERTY_STYLE_REPLACE.length() + 1);
+                attname = attname.split("\\.")[0];
+                String propval = parser.getProperty(key);
+                String[] tokens = propval.split(",");
+                IllegalStateAssertion.assertEquals(2, tokens.length, "Illegal style replace spec: " + key + "=" + propval);
+                Pattern pattern = Pattern.compile(tokens[0].trim());
+                String value = tokens[1].trim();
+                result.add(new Replacement(attname, pattern, value));
+            }
+        }
+        return result;
+    }
+
+    private Styles parseExternalStyles(Context context, Path cssPath) {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
         try {
-            String line = br.readLine();
-            while (line != null) {
-                if (line.contains("--") || line.contains("/*") || line.trim().length() == 0) {
+            BufferedReader br = new BufferedReader(new FileReader(cssPath.toFile()));
+            try {
+                String line = br.readLine();
+                while (line != null) {
+                    line = line.trim();
+                    if (line.length() > 0) {
+                        pw.print(line);
+                    }
                     line = br.readLine();
-                    continue;
                 }
-                styles.add(parseStyle(br, line));
-                line = br.readLine();
+            } finally {
+                br.close();
             }
         } catch (IOException ex) {
             throw new IllegalStateException(ex);
         }
         
-        // Replace/Add style attributes
-        for (Style style : styles) {
-            for (Style repstyle : replace.values()) {
-                if (style.name.contains(repstyle.name)) {
-                    style.merge(repstyle);
-                }
-            }
+        Styles result = new Styles();
+        String allstyles = sw.toString();
+        String[] tokens = allstyles.split("[}{]");
+        for (int i = 0; i < tokens.length / 2; i += 2) {
+            String keys = tokens[i];
+            String atts = tokens[i + 1];
+            Style style = new Style(keys);
+            style.addAttributes(atts);
+            result.add(style);
         }
-        
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        for (Style style : styles) {
-            pw.println(style.name + " {");
-            for (Entry<String, String> entry : style.attributes.entrySet()) {
-                pw.println("   " + entry.getKey() + ":" + entry.getValue() + ";");
-            }
-            pw.println("}");
-        }
-        
-        styleElement.setText(sw.toString());
-    }
-
-    private Style parseStyle(BufferedReader br, String firstLine) throws IOException {
-        Style result;
-        StringBuffer values = new StringBuffer();
-        int brackidx = firstLine.indexOf("{");
-        if (brackidx > 0) {
-            values.append(firstLine.substring(brackidx + 1));
-            result = new Style(firstLine.substring(0, brackidx));
-        } else {
-            result = new Style(firstLine.trim());
-        }
-        String line = br.readLine();
-        while (line != null) {
-            brackidx = line.indexOf("{");
-            if (brackidx >= 0) {
-                line = line.substring(brackidx + 1);
-            }
-            brackidx = line.indexOf("}");
-            if (brackidx >= 0) {
-                values.append(line.substring(0, brackidx));
-                break;
-            } else {
-                values.append(line.trim());
-            }
-            line = br.readLine();
-        }
-        addStyleAttributes(result, values.toString());
         return result;
     }
 
-    private void addStyleAttributes(Style style, String values) {
-        for (String keyval : values.split(";")) {
-            String[] tuple = keyval.split(":");
-            IllegalStateAssertion.assertEquals(2, tuple.length, "Illegal style attribute: " + keyval);
-            style.attributes.put(tuple[0].trim(), tuple[1].trim());
+    private void transformStyles(Context context, Element element) {
+        Attribute attClass = element.getAttribute("class");
+        if (attClass != null) {
+            classStyleReplace(context, element, attClass);
+        }
+        for (Element ch : element.getChildren()) {
+            transformStyles(context, ch);
         }
     }
 
+    private void classStyleReplace(Context context, Element element, Attribute attClass) {
+        String value = null;
+        String attname = attClass.getName();
+        String attvalue = attClass.getValue();
+        for (Replacement rep : replacements) {
+            if (attname.equals(rep.attname)) {
+                if (isWhitelisted(attvalue)) {
+                    value = attvalue;
+                } else if (rep.pattern.matcher(attvalue).matches()) {
+                    value = rep.value;
+                    break;
+                }
+            }
+        }
+        if (value != null) {
+            attClass.setValue(value);
+        } else {
+            element.removeAttribute(attClass);
+        }
+    }
+
+    private boolean isWhitelisted(String attvalue) {
+        for (String substr : whitelist) {
+            if (attvalue.contains(substr)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    class Replacement {
+        final String attname;
+        final Pattern pattern;
+        final String value;
+        Replacement(String attname, Pattern pattern, String value) {
+            this.attname = attname;
+            this.pattern = pattern;
+            this.value = value;
+        }
+    }
+    
+    @SuppressWarnings("serial")
+    class Styles extends LinkedHashSet<Style> {
+        
+        Style findStyle(String sname) {
+            for (Style style : this) {
+                if (style.names.contains(sname)) {
+                    return style;
+                }
+            }
+            return null;
+        }
+    }
+    
     class Style {
-        final String name;
+        final Set<String> names = new LinkedHashSet<>();;
         final Map<String, String> attributes = new LinkedHashMap<>();
 
-        Style(String name) {
-            this.name = name;
+        Style(String namelist) {
+            for (String name : namelist.split(",")) {
+                names.add(name.trim());
+            }
         }
 
-        void merge(Style other) {
-            IllegalArgumentAssertion.assertTrue(name.contains(other.name), "Style name missmatch: " + this + " <> " + other);
-            log.debug("Merge style: {}", other);
-            for (Entry<String, String> entry : other.attributes.entrySet()) {
-                attributes.put(entry.getKey(), entry.getValue());
+        void addAttributes(String values) {
+            for (String keyval : values.split(";")) {
+                if (keyval.trim().length() > 0) {
+                    String[] tuple = keyval.split(":");
+                    IllegalStateAssertion.assertEquals(2, tuple.length, "Illegal style attribute: " + values);
+                    attributes.put(tuple[0].trim(), tuple[1].trim());
+                }
             }
         }
 
         @Override
         public String toString() {
-            return "Style [name=" + name + ", attributes=" + attributes + "]";
+            return "Style [name=" + names + ", attributes=" + attributes + "]";
         }
     }
 }

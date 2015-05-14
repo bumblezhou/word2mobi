@@ -20,6 +20,7 @@
 package org.kdp.word.transformer;
 
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -28,6 +29,7 @@ import org.jdom2.Element;
 import org.jdom2.JDOMFactory;
 import org.kdp.word.Transformer;
 import org.kdp.word.utils.IOUtils;
+import org.kdp.word.utils.IllegalStateAssertion;
 import org.kdp.word.utils.JDOMUtils;
 
 /**
@@ -57,6 +59,7 @@ public class TOCTransformer implements Transformer {
             
             // Add the ol element
             Element ol = factory.element("ol");
+            ol.setAttribute("class", "Toc");
             nav.getChildren().add(ol);
             
             Iterator<Element> itel = children.iterator();
@@ -84,15 +87,14 @@ public class TOCTransformer implements Transformer {
                 tocname = tocname.substring(0, dotidx).trim();
             }
             String aname = findAnchorName(root, tocname);
-            if (aname != null) {
-                Element anchor = factory.element("a");
-                Path targetPath = IOUtils.bookRelative(context, context.getTarget());
-                anchor.getAttributes().add(factory.attribute("href", targetPath + "#" + aname));
-                anchor.setText(tocname);
-                el.getChildren().clear();
-                el.setText(null);
-                el.getChildren().add(anchor);
-            }
+            IllegalStateAssertion.assertNotNull(aname, "Cannot find anchor for: " + tocname);
+            Element anchor = factory.element("a");
+            Path targetPath = IOUtils.bookRelative(context, context.getTarget());
+            anchor.getAttributes().add(factory.attribute("href", targetPath + "#" + aname));
+            anchor.setText(tocname);
+            el.getChildren().clear();
+            el.setText(null);
+            el.getChildren().add(anchor);
         } else {
             for (Element ch : el.getChildren()) {
                 transformInternal(context, ch);
@@ -114,7 +116,7 @@ public class TOCTransformer implements Transformer {
         String result = null;
         if ("h1".equals(el.getName())) {
             String h1Name = getFirstTextElement(el).getText();
-            if (targetName.equals(h1Name)) {
+            if (equalsIgnoreWhitespace(targetName, h1Name)) {
                 result = getAnchorName(el);
             }
         } else {
@@ -128,6 +130,12 @@ public class TOCTransformer implements Transformer {
         return result;
     }
     
+    private boolean equalsIgnoreWhitespace(String target, String candidate) {
+        List<String> tlist = Arrays.asList(target.split("[\\s]"));
+        List<String> clist = Arrays.asList(candidate.split("[\\s]"));
+        return tlist.equals(clist);
+    }
+
     private String getAnchorName(Element el) {
         String result = null;
         Attribute att = el.getAttribute("name");

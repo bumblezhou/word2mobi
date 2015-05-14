@@ -25,6 +25,7 @@ public class ParserBuilderFactory {
     
     public static ParserBuilder newInstance() {
         ParserBuilder builder = new ParserBuilder();
+        builder.css("src/test/resources/external.css");
         builder.bookdir("target/book");
         return builder;
     }

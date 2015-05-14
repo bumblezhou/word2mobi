@@ -53,60 +53,92 @@ public class ListParagraphTransformer implements Transformer {
             }
         }
     }
-
+    
     private void processListItems(Context context, Element parent) {
-        int firstItemIndex = -1;
+        
+        // Get the list of list item elements
         List<Element> listItems = new ArrayList<>();
         Iterator<Element> itch = parent.getChildren().iterator();
         while (itch.hasNext()) {
             Element ch = itch.next();
             if (JDOMUtils.isElement(ch, "p", "class", "MsoListParagraph")) {
-                if (listItems.isEmpty()) {
-                    firstItemIndex = parent.getChildren().indexOf(ch);     
-                }
                 listItems.add(ch);
-                itch.remove();
             } else if (!listItems.isEmpty()) {
-                processListItemBatch(context, parent, listItems, firstItemIndex);
+                processListItemBatch(context, parent, listItems);
                 itch = parent.getChildren().iterator();
-                listItems = new ArrayList<>();
+                listItems.clear();
             }
         }
         if (!listItems.isEmpty()) {
-            processListItemBatch(context, parent, listItems, firstItemIndex);
+            processListItemBatch(context, parent, listItems);
         }
     }
 
-    private void processListItemBatch(Context context, Element parent, List<Element> listItems, int firstItemIndex) {
-        JDOMFactory factory = context.getJDOMFactory();
-        Element ul = factory.element("ul");
-        for (Element liItem : listItems) {
-            boolean ignoreFirstElement = true;
-            boolean ignoreFirstText = true;
-            Element li = factory.element("li");
-            li.getAttributes().add(factory.attribute("class", "MsoListParagraph"));
-            for (Content ch : liItem.getContent()) {
-                if (ch.getCType() == CType.Element) {
-                    if (ignoreFirstElement) {
-                        ignoreFirstElement = false;
-                    } else {
-                        Element chel = (Element) ch;
-                        li.addContent(chel.clone());
-                    }
-                } else if (ch.getCType() == CType.Text) {
-                    if (ignoreFirstText) {
-                        ignoreFirstText = false;
-                    } else {
-                        ignoreFirstElement = false;
-                        Text txel = (Text) ch;
-                        String text = txel.getText();
-                        li.addContent(text);
-                    }
-                }
-            }
-            ul.getChildren().add(li);
+    private void processListItemBatch(Context context, Element parent, List<Element> listItems) {
+        boolean ordered = false;
+        for (Element el : listItems) {
+            removeNestedSpanElements(el);
+            normalizeListItemText(el);
+            ordered = processItemMarker(el);
+            el.getAttributes().clear();
         }
-        parent.getChildren().add(firstItemIndex, ul);
+        Element firstItem = listItems.get(0);
+        int index = parent.indexOf(firstItem);
+        for (Element el : listItems) {
+            parent.removeContent(el);
+        }
+        JDOMFactory factory = context.getJDOMFactory();
+        Element ul = factory.element(ordered ? "ol" : "ul");
+        for (Element el : listItems) {
+            Element li = factory.element("li");
+            li.setAttribute("class", "MsoListParagraph");
+            for (Content co : el.getContent()) {
+                li.addContent(co.clone());
+            }
+            ul.addContent(li);
+        }
+        parent.addContent(index, ul);
+    }
+
+    private void removeNestedSpanElements(Element el) {
+        Iterator<Element> itch = el.getChildren().iterator();
+        while (itch.hasNext()) {
+            Element ch = itch.next();
+            if ("span".equals(ch.getName())) {
+                itch.remove();
+            } else {
+                removeNestedSpanElements(ch);
+            }
+        }
+    }
+
+    private void normalizeListItemText(Element el) {
+        for (Content co : el.getContent()) {
+            if (co.getCType() == CType.Text) {
+                Text tco = (Text) co;
+                String text = tco.getText().trim();
+                tco.setText(text + " ");
+            }
+        }
+    }
+
+    private boolean processItemMarker(Element liItem) {
+        String first = "";
+        int cosize = liItem.getContentSize();
+        Content co = liItem.getContent(0);
+        if (co.getCType() == CType.Text) {
+            Text text = (Text) co;
+            String value = text.getText();
+            int index = value.indexOf(" ");
+            first = value.substring(0, index);
+            value = value.substring(index + 1);
+            text.setText(value);
+        } else if (cosize > 1 && co.getCType() == CType.Element) {
+            Element el = (Element) co;
+            first = el.getText();
+            el.getParent().removeContent(co);
+        }
+        return first.endsWith(".");
     }
 
     private boolean hasListItems(Element el) {

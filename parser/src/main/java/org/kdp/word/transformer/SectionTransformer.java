@@ -88,7 +88,6 @@ public class SectionTransformer implements Transformer {
         }
     }
 
-
     private void findWordSections(Context context, Sections sections, Element el) {
         String sectionName = getSectionName(el);
         if (sectionName != null) {
@@ -125,9 +124,16 @@ public class SectionTransformer implements Transformer {
         Section(Context context, String name, Element element) {
             this.name = name;
             this.element = element;
-            this.isnav = JDOMUtils.findElement(element, "li", "class", "MsoToc1") != null;
+            Element li = JDOMUtils.findElement(element, "li");
+            if (li != null) {
+                Attribute att = li.getAttribute("class");
+                String attval = att != null ? att.getValue() : "";
+                this.isnav = attval.toLowerCase().endsWith("toc1");
+            } else {
+                this.isnav = false;
+            }
             Path bookdir = context.getOptions().getBookDir();
-            this.target = bookdir.resolve(name + ".xhtml");
+            this.target = bookdir.resolve(name + (isnav ? "-TOC" : "") + ".html");
         }
     }
 }

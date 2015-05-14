@@ -74,6 +74,7 @@ public final class Parser {
     public static final String PROPERTY_OUTPUT_ENCODING = "output.encoding";
     public static final String PROPERTY_OUTPUT_FORMAT = "output.format";
     public static final String PROPERTY_STYLE_REPLACE = "style.replace";
+    public static final String PROPERTY_STYLE_REPLACE_WHITELIST = "style.replace.whitelist";
     public static final String PROPERTY_TRANSFORMER = "transformer";
     
     public static final String OUTPUT_FORMAT_COMPACT = "compact";
@@ -179,7 +180,7 @@ public final class Parser {
                 Path outpath = options.getOutput();
                 if (outpath == null) {
                     String fname = source.getFileName().toString();
-                    fname = fname.substring(0, fname.lastIndexOf('.')) + ".xhtml";
+                    fname = fname.substring(0, fname.lastIndexOf('.')) + ".html";
                     outpath = Paths.get(fname);
                 }
                 return outpath;

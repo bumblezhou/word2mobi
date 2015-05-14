@@ -47,8 +47,8 @@ public class TOCTransformerTest {
         Assert.assertFalse("No WordSection1", result.contains("<div class=\"WordSection1\">"));
         Assert.assertTrue("Contains WordSection2", result.contains("<div class=\"WordSection2\">"));
         
-        File tocfile = new File("target/book/WordSection1.xhtml");
-        Assert.assertTrue("Exists WordSection1.xhtml", tocfile.exists());
+        File tocfile = new File("target/book/WordSection1-TOC.html");
+        Assert.assertTrue("Exists WordSection1-TOC.html", tocfile.exists());
         
         List<String> lines = new ArrayList<>();
         BufferedReader br = new BufferedReader(new FileReader(tocfile));
@@ -59,9 +59,11 @@ public class TOCTransformerTest {
         }
         br.close();
         
-        Assert.assertTrue("Contains #_Toc2", contains(lines, "<a href=\"WebPage02.xhtml#_Toc2\">Chapter 2</a>"));
-        Assert.assertTrue("Contains #_Toc3", contains(lines, "<a href=\"WebPage02.xhtml#_Toc3\">Chapter 3</a>"));
-        Assert.assertTrue("Contains #_Toc4", contains(lines, "<a href=\"WebPage02.xhtml#_Toc4\">Chapter 4</a>"));
+        Assert.assertTrue("Contains ol class", contains(lines, "<ol class=\"Toc\">"));
+        Assert.assertTrue("Contains li class", contains(lines, "<li class=\"MsoToc1\">"));
+        Assert.assertTrue("Contains #_Toc2", contains(lines, "<a href=\"WebPage02.html#_Toc2\">Chapter 2</a>"));
+        Assert.assertTrue("Contains #_Toc3", contains(lines, "<a href=\"WebPage02.html#_Toc3\">Chapter 3</a>"));
+        Assert.assertTrue("Contains #_Toc4", contains(lines, "<a href=\"WebPage02.html#_Toc4\">Chapter 4</a>"));
     }
 
     private boolean contains(List<String> lines, String substring) {

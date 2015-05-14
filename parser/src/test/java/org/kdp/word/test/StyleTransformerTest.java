@@ -40,6 +40,6 @@ public class StyleTransformerTest {
         File infile = new File("src/test/resources/WebPage05.html");
         String result = parser.process(infile);
         //System.out.println(result);
-        Assert.assertTrue("Contains text-align", result.contains("text-align:left;"));
+        Assert.assertTrue("Contains text-align", result.contains("<link rel=\"stylesheet\" type=\"text/css\" href=\"external.css\" />"));
     }
 }

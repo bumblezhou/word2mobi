@@ -104,6 +104,11 @@ public class ParserBuilder {
         return this;
     }
     
+    public ParserBuilder css(String css) {
+        options.setExternalCSS(Paths.get(css));
+        return this;
+    }
+    
     public Parser build() {
         parser.init(properties);
         return parser;

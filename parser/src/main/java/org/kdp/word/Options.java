@@ -25,6 +25,9 @@ public final class Options {
     @Option(name = "--opf", usage = "Path to the generaged OPF file")
     private Path opfTarget;
 
+    @Option(name = "--css", usage = "Path to an external CSS file")
+    private Path externalCSS;
+
     @Option(name = "--opf-template", usage = "Path to the OPF template")
     private Path opfTemplate = Paths.get("opf-template.xml");
 
@@ -61,6 +64,14 @@ public final class Options {
 
     void setOpfTemplate(Path template) {
         this.opfTemplate = template;
+    }
+
+    public Path getExternalCSS() {
+        return externalCSS;
+    }
+
+    void setExternalCSS(Path css) {
+        this.externalCSS = css;
     }
 
     void helpScreen(CmdLineParser cmdParser) {

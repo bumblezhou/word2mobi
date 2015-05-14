@@ -29,19 +29,19 @@ import org.kdp.word.ParserBuilder;
 public class ListParagraphTransformerTest {
     
     @Test
-    public void testTOC() throws Exception {
+    public void testListItems() throws Exception {
         
         ParserBuilder builder = ParserBuilderFactory.newInstance();
         Parser parser = builder.pretty().build();
         
         File infile = new File("src/test/resources/WebPage06.html");
         String result = parser.process(infile);
-        //System.out.println(result);
+        System.out.println(result);
         
         Assert.assertTrue("Contains Line item 1", result.contains("<li class=\"MsoListParagraph\">Line item 1</li>"));
         Assert.assertTrue("Contains Line item 2", result.contains("<b>item</b>"));
-        Assert.assertTrue("Contains Line item 3", result.contains("<li class=\"MsoListParagraph\">Line item 3</li>"));
-        Assert.assertTrue("Contains Line item 4", result.contains("<li class=\"MsoListParagraph\">Line item 4</li>"));
+        Assert.assertTrue("Contains Line item 3", result.contains("<i>Line item 3</i>"));
+        Assert.assertTrue("Contains Line item 4", result.contains("<i>Line item 4</i>"));
     }
     
 }
