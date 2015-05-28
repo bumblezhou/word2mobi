@@ -41,6 +41,7 @@ public class FootnodeTransformerTest {
         String result = parser.process(infile);
         //System.out.println(result);
         
-        Assert.assertTrue("Contains Line item 1", result.contains("<a shape=\"rect\" href=\"#_ftn1\" name=\"_ftnref1\" title=\"\">[1]</a>"));
+        Assert.assertTrue("Contains name=_ftnref1", result.contains("name=\"_ftnref1\""));
+        Assert.assertTrue("Contains <a ...>[1]</a>", result.contains("<a ") && result.contains("[1]</a>"));
     }
 }

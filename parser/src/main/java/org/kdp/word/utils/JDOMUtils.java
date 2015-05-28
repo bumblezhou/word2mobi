@@ -72,8 +72,7 @@ public final class JDOMUtils {
     }
 
     public static boolean isElement(Element el, String name, String attname, String attvalue) {
-        IllegalArgumentAssertion.assertNotNull(name, "name");
-        if (el.getName().equals(name)) {
+        if (el != null && el.getName().equals(name)) {
             if (attname != null && attvalue != null) {
                 Attribute att = el.getAttribute(attname);
                 return att != null && attvalue.equals(att.getValue());
