@@ -28,7 +28,8 @@
 
     <name>Word2Mobi :: Distro</name>
 
-    <artifactId>word2mobi-distro</artifactId>
+    <groupId>org.kdp.word.distro</groupId>
+    <artifactId>word2mobi</artifactId>
     <packaging>pom</packaging>
 
     <dependencies>
@@ -85,8 +86,8 @@
                         <configuration>
                             <artifactItems>
                                 <artifactItem>
-                                    <groupId>org.kdp.word</groupId>
-                                    <artifactId>word2mobi-distro</artifactId>
+                                    <groupId>org.kdp.word.distro</groupId>
+                                    <artifactId>word2mobi</artifactId>
                                     <version>${project.version}</version>
                                     <type>zip</type>
                                     <outputDirectory>${project.build.directory}</outputDirectory>

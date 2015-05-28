@@ -36,7 +36,7 @@ public class ListParagraphTransformerTest {
         
         File infile = new File("src/test/resources/WebPage06.html");
         String result = parser.process(infile);
-        System.out.println(result);
+        //System.out.println(result);
         
         Assert.assertTrue("Contains Line item 1", result.contains("<li class=\"MsoListParagraph\">Line item 1</li>"));
         Assert.assertTrue("Contains Line item 2", result.contains("<b>item</b>"));
