@@ -56,7 +56,7 @@ public class ParserBuilder {
         try {
             String configLocation = System.getProperty(Parser.SYSTEM_PROPERTY_CONFIGURATION);
             if (configLocation != null) {
-                log.info("Load configuration from: {}", configLocation);
+                log.debug("Load configuration from: {}", configLocation);
                 InputStream input = new URL(configLocation).openStream();
                 try {
                     properties.load(input);

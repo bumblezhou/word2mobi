@@ -137,9 +137,9 @@ public final class Parser {
         final Path basedir = source.getParent();
         initDefaults(basedir);
 
-        log.info("Using properties:");
+        log.debug("Using properties:");
         for (String key : getPropertyKeys()) {
-            log.info(" " + key + " = " + getProperty(key));
+            log.debug(" " + key + " = " + getProperty(key));
         }
         
         // Parse input file to Document
@@ -222,7 +222,7 @@ public final class Parser {
         // Write output file 
         File outfile = options.getBookDir().resolve(context.getTarget()).toFile();
         outfile.getParentFile().mkdirs();
-        log.info("Writing output to: {}", outfile);
+        log.debug("Writing output to: {}", outfile);
         FileOutputStream fos = new FileOutputStream(outfile);
         IOUtils.writeDocument(context, doc, fos);
         fos.close();
@@ -287,7 +287,7 @@ public final class Parser {
         File configFile = basedir.resolve(CONFIGURATION_PROPERTIES).toFile();
         log.debug("Search configuration: {}", configFile);
         if (configFile.isFile()) {
-            log.info("Load configuration from: {}", configFile);
+            log.debug("Load configuration from: {}", configFile);
             Properties properties = new Properties();
             try {
                 InputStream input = new FileInputStream(configFile);
